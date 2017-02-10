@@ -30,5 +30,9 @@
   "bugs": {
     "url": "https://github.com/dtudury/autobots/issues"
   },
-  "homepage": "https://github.com/dtudury/autobots#readme"
+  "homepage": "https://github.com/dtudury/autobots#readme",
+  "devDependencies": {
+    "node-sass": "^4.5.0",
+    "typescript": "^2.1.6"
+  }
 }
