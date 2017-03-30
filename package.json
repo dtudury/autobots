@@ -31,8 +31,19 @@
     "url": "https://github.com/dtudury/autobots/issues"
   },
   "homepage": "https://github.com/dtudury/autobots#readme",
-  "devDependencies": {
+  "eslintConfig": {
+    "rules": {
+      "no-console": "off",
+      "strict": 2
+    },
+    "env": {
+      "es6": true,
+      "node": true
+    },
+    "extends": "eslint:recommended"
+  },
+  "dependencies": {
     "node-sass": "^4.5.0",
-    "typescript": "^2.1.6"
+    "typescript": "^2.2.2"
   }
 }
