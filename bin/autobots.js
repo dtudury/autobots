@@ -3,20 +3,13 @@
 "use strict";
 
 const process = require("process");
+const child_process = require("child_process");
 const path = require("path");
 const lib = require("../lib");
 
-console.log(process.cwd())
-
-const built_in_transformers = {
-    "autobots_copy": lib.autobots["copy"],
-    "autobots_tsx-to-js": lib.autobots["tsx-to-js"],
-    "autobots_sass-to-css": lib.autobots["sass-to-css"]
-}
-
 let cwd = process.cwd();
 
-let load_config = () => lib.fs.readFile(path.join(cwd, ".autobots.json"), "utf8")
+const load_config = () => lib.fs.readFile(path.join(cwd, ".autobots.json"), "utf8")
     .catch(err => {
         let parent = path.dirname(cwd);
         if (err.code === "ENOENT" && parent !== cwd) {
@@ -29,19 +22,23 @@ let load_config = () => lib.fs.readFile(path.join(cwd, ".autobots.json"), "utf8"
 
 load_config()
     .then(JSON.parse)
-    .then(autobots => autobots.forEach(autobot => {
-        autobot.src = path.join(cwd, autobot.src);
-        autobot.dest = path.join(cwd, autobot.dest);
-        let transformer;
-        if (!(transformer = built_in_transformers[autobot.transformer])) {
-            transformer = require(path.join(cwd, "node_modules", autobot.transformer));
-        }
-        lib.fs.mkdirp(path.dirname(autobot.dest))
-            .then(() => transformer(autobot))
-            .then(towatch => console.log(
-                "watch:", towatch
-            ))
-    }))
+    .then(autobots => {
+        let longest_label = 0;
+        autobots.forEach(autobot => {
+            autobot.src = path.join(cwd, autobot.src);
+            autobot.dest = path.join(cwd, autobot.dest);
+            autobot.label = autobot.label || `${autobot.dest} (${autobot.transformer})`;
+            longest_label = Math.max(longest_label, autobot.label.length)
+        })
+        Promise.all(autobots.map(autobot => lib.fs.mkdirp(path.dirname(autobot.dest))))
+        .then(() => {
+            autobots.forEach(autobot => {
+                while (autobot.label.length < longest_label) autobot.label += " ";
+                let child = child_process.fork(path.join(__dirname, "../lib/child.js"), process.argv.slice(2), {cwd});
+                child.send(autobot);
+            });
+        })
+    })
     .catch(err => {
         console.error(err);
         throw new Error("error loading config");
